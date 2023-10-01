@@ -1,39 +1,32 @@
-const multer = require('multer'); 
+const multer = require('multer');
 
-const storage = multer.memoryStorage(); 
-
-const filtro_imagen = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') && (file.mimetype==='image/jpeg' || file.mimetype==='image/png')) {
-        cb(null, true);
-    } else {
-        cb(new Error('Tipo de archivo imagen no valido')); 
-    }
-};
-
-const filtro_video = (req, file, cb) => {
-    if (file.mimetype === 'video/mp4') {
-        cb(null, true); 
-    } else {
-        cb(new Error('Tipo de archivo video no valido'));
-    }
-};
-
+// Configuración para subir archivos multimedia
+const storage = multer.memoryStorage();
 const upload = multer({
-    storage: storage, 
-    fileFilter: function(req, file, cb) {
-        if (file.fieldname==='imagen') {
-            filtro_imagen(req, file, cb);
+    storage: storage,
+    fileFilter: (req, file, callback) => {
+        if (file.fieldname === 'imagen') {
+            if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+                callback(null, true);
+            } else {
+                callback(new Error('Formato de imagen no válido. Solo se permiten JPG y PNG.'));
+            }
+        } else if (file.fieldname === 'video') {
+            if (file.mimetype === 'video/mp4') {
+                callback(null, true);
+            } else {
+                callback(new Error('Formato de video no válido. Solo se permite MP4.'));
+            }
         } else {
-            filtro_video(req, file, cb);
+            callback(new Error('Campo de archivo no reconocido.'));
         }
-    }, 
-    limits: {
-        fileSize: {
-            imagen: 1024*1024*6, 
-            video: 1024*1024*15,
-        },
     },
-});
-
+    limits: {
+        fieldSize: 15 * 1024 * 1024, // Limita el tamaño total de todos los archivos a 15 MB
+    },
+}).fields([
+    { name: 'imagen', maxCount: 1 },
+    { name: 'video', maxCount: 1 },
+]);
 
 module.exports = upload;

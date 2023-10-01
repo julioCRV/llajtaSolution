@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler'); 
 const crypto = require('crypto'); 
-const multer = require('../configuraciones/archivosMultimedia');
 const pool = require('../configuraciones/database'); 
 
 function codificar(valor) {
@@ -51,34 +50,16 @@ exports.obtenerPlatillos = asyncHandler(async (req, res, next) => {
 	}
 });
 
-exports.insertarPlatillo = asyncHandler(async (req, res, next) => {
+exports.insertarPlatillo = asyncHandler(async (req, res) => {
 	try {
 		console.log('Inicia insercion');
-
-		multer.single('imagen')(req, res, async (err) => {
-			if (err) {
-				console.log(err)
-				return;
-			}
-		});
-		
-		console.log('Correcto con el mdw de imagen');
-		
-		multer.single('video')(req, res, async (err) => {
-			if (err) {
-				console.log(err);
-				return;
-			}
-		});
-
-		console.log('Correcto con el mdw de video');
 
 		const nombre = req.body.nombre; 
 		const descripcion = req.body.descripcion; 
 		const imagen = req.files['imagen'][0].buffer; 
 		const video = req.files['video'][0].buffer;
 
-		const query = 'INSERT INTO platillo_tipico(TITULO_PLATILLO,DESCRIPCION_PLATILLO,IMAGEN,VIDEO) VALUES(?,?,?,?)';
+		const query = 'INSERT INTO platillo_tipico(TITULO_PLATILLO,DESCRIPCION_PLATILLO,IMAGEN_PLATILLO,URL_VIDEO) VALUES(?,?,?,?)';
 
 		console.log('Exitos al manejar los atributos');
 
@@ -96,13 +77,14 @@ exports.insertarPlatillo = asyncHandler(async (req, res, next) => {
 			})
 		}
 	} catch (err) {
+		console.log(err);
 		res.status(500).json({
 			message: 'Error interno del servidor general', 
 			error: err
 		})
 	}
 });
-exports.modificarPlatillo = asyncHandler(async (req, res, next) => {
+exports.modificarPlatillo = asyncHandler(async (req, res) => {
 	try {
 		let id = req.params.id; 
 		id = decodificar(id); 
@@ -116,7 +98,7 @@ exports.modificarPlatillo = asyncHandler(async (req, res, next) => {
 		const imagen = req.files['imagen'].buffer; 
 		const video = req.files['video'].buffer; 
 
-		const sql = 'UPDATE platillo_tipico SET NOMBRE_PLATILLO = ?, DESCRCIPCION =?, IMAGEN = ?, VIDEO = ? WHERE ID_PLATILLO = ?'; 
+		const sql = 'UPDATE platillo_tipico SET NOMBRE_PLATILLO = ?, DESCRCIPCION =?, IMAGEN_PLATILLO = ?, URL_VIDEO = ? WHERE ID_PLATILLO = ?'; 
 		const [result] = await pool.query(sql , [nombre, descripcion, imagen, video, id]); 
 
 		if (result.affectedRows >0 ) {
