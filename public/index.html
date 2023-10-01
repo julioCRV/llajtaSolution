@@ -3,17 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Ejemplo</title>
+    <title>Formulario de Platillos</title>
 </head>
 <body>
-    <h1>Formulario de Ejemplo</h1>
+    <!-- Formulario para registrar un platillo -->
+    <h2>Registrar Platillo</h2>
+    <form action="/registrarPlatillo" method="POST" enctype="multipart/form-data">
+        <label for="nombre">Título del Platillo:</label>
+        <input type="text" id="nombre" name="nombre" required><br>
 
-    <form action="/prueba" method="POST">
-        <label for="nombre">Nombre:</label>
-        <input type="text" id="nombre" name="nombre" required><br><br>
-        <label for="passwd">Password:</label>
-        <input type="password" id="passwd" name="passwd" required><br><br>
-        <input type="submit" value="Enviar">
+        <label for="descripcion">Descripción del Platillo:</label>
+        <textarea id="descripcion" name="descripcion" required></textarea><br>
+
+        <label for="imagen">Imagen del Platillo (JPEG o PNG):</label>
+        <input type="file" id="imagen" name="imagen" accept="image/jpeg, image/png" required><br>
+
+        <label for="video">Video del Platillo (MP4):</label>
+        <input type="file" id="video" name="video" accept="video/mp4" required><br>
+
+        <button type="submit">Registrar Platillo</button>
     </form>
+
+    <!-- Formulario para modificar un platillo ->
+    <h2>Modificar Platillo</h2>
+    <form action="/modificarPlatillo/:id" method="PUT">
+        <label for="nuevoTitulo">Nuevo Título del Platillo:</label>
+        <input type="text" id="nuevoTitulo" name="nuevoTitulo" required><br>
+
+        <label for="nuevaDescripcion">Nueva Descripción del Platillo:</label>
+        <textarea id="nuevaDescripcion" name="nuevaDescripcion" required></textarea><br>
+
+        <button type="submit">Modificar Platillo</button>
+    </form>
+
+    <!-- Formulario para eliminar un platillo 
+    <h2>Eliminar Platillo</h2>
+    <form action="/eliminarPlatillo/:id" method="DELETE">
+        <label for="idPlatillo">ID del Platillo a Eliminar:</label>
+        <input type="text" id="idPlatillo" name="idPlatillo" required><br>
+
+        <button type="submit">Eliminar Platillo</button>
+    </form> -->
 </body>
 </html>

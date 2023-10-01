@@ -1,25 +1,39 @@
 const multer = require('multer'); 
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    }, filename: function (req, file, cb) {
-        cb(null, Date.now() +'-'+file.originalname);
-    },
-});
+const storage = multer.memoryStorage(); 
+
+const filtro_imagen = (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') && (file.mimetype==='image/jpeg' || file.mimetype==='image/png')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Tipo de archivo imagen no valido')); 
+    }
+};
+
+const filtro_video = (req, file, cb) => {
+    if (file.mimetype === 'video/mp4') {
+        cb(null, true); 
+    } else {
+        cb(new Error('Tipo de archivo video no valido'));
+    }
+};
 
 const upload = multer({
-    storage, 
-    fileFilter: function (req, file, cb) {
-        if (file.mimytype.startsWith('video/mp4') || file.mimytype.startsWith('image/')) {
-            cb(null, true);
+    storage: storage, 
+    fileFilter: function(req, file, cb) {
+        if (file.fieldname==='imagen') {
+            filtro_imagen(req, file, cb);
         } else {
-            cb(new Error('Tipo de archivo no valido')); 
+            filtro_video(req, file, cb);
         }
     }, 
     limits: {
-        fileSize: 1024*1024*10, 
+        fileSize: {
+            imagen: 1024*1024*6, 
+            video: 1024*1024*15,
+        },
     },
 });
 
-module.exports = {upload};
+
+module.exports = upload;
