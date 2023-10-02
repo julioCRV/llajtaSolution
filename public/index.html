@@ -1,48 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Platillos</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mostrar Platillo y Video</title>
 </head>
 <body>
-    <!-- Formulario para registrar un platillo -->
-    <h2>Registrar Platillo</h2>
-    <form action="/registrarPlatillo" method="POST" enctype="multipart/form-data">
-        <label for="nombre">Título del Platillo:</label>
-        <input type="text" id="nombre" name="nombre" required><br>
+  <h1>Platillo</h1>
+  <div id="platillo-info">
+    <!-- Aquí se mostrará la información del platillo -->
+  </div>
 
-        <label for="descripcion">Descripción del Platillo:</label>
-        <textarea id="descripcion" name="descripcion" required></textarea><br>
+  <h1>Video</h1>
+  <video id="video-player" controls autoplay>
+    <!-- El video se cargará aquí -->
+  </video>
 
-        <label for="imagen">Imagen del Platillo (JPEG o PNG):</label>
-        <input type="file" id="imagen" name="imagen" accept="image/jpeg, image/png" required><br>
+  <!-- Aquí se mostrará la imagen del platillo -->
+  <img id="imagen-platillo" alt="Imagen del Platillo">
 
-        <label for="video">Video del Platillo (MP4):</label>
-        <input type="file" id="video" name="video" accept="video/mp4" required><br>
+  <script>
+    // Realiza un GET para obtener la información del platillo
+    fetch('/mostrarPlatillos/page/1')
+      .then(response => response.json())
+      .then(data => {
+        // Extrae el ID codificado del platillo
+        const id_codificado = data.respuesta.id; // Asegúrate de usar la propiedad correcta aquí
+        console.log(data.respuesta);
+        // Configura la información del platillo en la página
+        const platilloInfo = document.getElementById('platillo-info');
+        platilloInfo.innerHTML = `
+          <p>Nombre: ${data.respuesta.nombre}</p>
+          <p>Descripción: ${data.respuesta.descripcion}</p>
+        `;
 
-        <button type="submit">Registrar Platillo</button>
-    </form>
+        // Configura la fuente del reproductor de video
+        const videoPlayer = document.getElementById('video-player');
+        videoPlayer.src = `/stream/${id_codificado}`;
 
-    <!-- Formulario para modificar un platillo ->
-    <h2>Modificar Platillo</h2>
-    <form action="/modificarPlatillo/:id" method="PUT">
-        <label for="nuevoTitulo">Nuevo Título del Platillo:</label>
-        <input type="text" id="nuevoTitulo" name="nuevoTitulo" required><br>
-
-        <label for="nuevaDescripcion">Nueva Descripción del Platillo:</label>
-        <textarea id="nuevaDescripcion" name="nuevaDescripcion" required></textarea><br>
-
-        <button type="submit">Modificar Platillo</button>
-    </form>
-
-    <!-- Formulario para eliminar un platillo 
-    <h2>Eliminar Platillo</h2>
-    <form action="/eliminarPlatillo/:id" method="DELETE">
-        <label for="idPlatillo">ID del Platillo a Eliminar:</label>
-        <input type="text" id="idPlatillo" name="idPlatillo" required><br>
-
-        <button type="submit">Eliminar Platillo</button>
-    </form> -->
+        // Configura la fuente de la imagen del platillo
+        const imagenPlatillo = document.getElementById('imagen-platillo');
+        imagenPlatillo.src = data.respuesta.imagen;
+      })
+      .catch(error => console.error('Error al obtener el platillo:', error));
+  </script>
 </body>
 </html>

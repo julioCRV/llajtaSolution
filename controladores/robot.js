@@ -1,23 +1,25 @@
 const asyncHandler = require('express-async-handler'); 
 const crypto = require('crypto'); 
+const fs = require('fs');
+
 const pool = require('../configuraciones/database'); 
 
 function codificar(valor) {
 	const hash = crypto.createHash('sha256'); 
-	hash.update(valor);
+	hash.update(valor.toString());
 	return hash.digest('hex');
 }
 function decodificar(hash) {
 	try {
 		const valor = Buffer.from(hash, 'hex').toString('utf8'); 
-		return valor; 
+		return parseInt(valor, 10); 
 	} catch (err) {
 		console.log('Error en la decodificacion', err);
 		return null; 
 	}
 }
 
-exports.obtenerPlatillos = asyncHandler(async (req, res, next) => {
+exports.obtener_platillo = asyncHandler(async (req, res, next) => {
 	try {
 		const id = req.params.id; 
 		if (id<0) {
@@ -26,7 +28,7 @@ exports.obtenerPlatillos = asyncHandler(async (req, res, next) => {
 			}); 
 			return;
 		} 
-		const sql = 'SELECT * FROM platillo_tipico ORDER BY TITULO_PLATILLO LIMIT ?, 1'; 
+		const sql = 'SELECT ID_PLATILLO,TITULO_PLATILLO,DESCRIPCION_PLATILLO,IMAGEN_PLATILLO FROM platillo_tipico ORDER BY TITULO_PLATILLO LIMIT ?, 1'; 
 		const indexi = id-1; 
 
 		const [result] = await pool.query(sql, indexi); 
@@ -39,10 +41,24 @@ exports.obtenerPlatillos = asyncHandler(async (req, res, next) => {
 			let platillo = result[0];
 			const id_codificado =codificar(platillo.ID_PLATILLO); 
 			platillo.ID_PLATILLO = id_codificado;
-			res.setHeader('Content-Type', 'application/json'); 
-			res.send(JSON.stringify(platillo));
+			const datos_imagen = platillo.IMAGEN_PLATILLO;
+			let formato_imagen = 'jpeg';
+			if (Buffer.isBuffer(datos_imagen) && datos_imagen>1) {
+				if (datos_imagen[0]===0x89 && datos_imagen[1]==0x50) {
+					formato_imagen = 'png';
+				} 
+			}
+			const imagen_base_64 = platillo.IMAGEN_PLATILLO.toString('base64');
+			const respuesta = {
+				id: id_codificado,
+				nombre: platillo.TITULO_PLATILLO,
+				descripcion: platillo.DESCRIPCION_PLATILLO,
+				imagen: `data:image/${formato_imagen};base64,${imagen_base_64}`,
+			}
+			res.json({respuesta});
 		}
 	} catch (err) {
+		console.log(err);
 		res.status(500).json({
 			message: 'Error del servidor', 
 			error: err
@@ -50,10 +66,59 @@ exports.obtenerPlatillos = asyncHandler(async (req, res, next) => {
 	}
 });
 
-exports.insertarPlatillo = asyncHandler(async (req, res) => {
+exports.stream_video = asyncHandler (async (req, res) => {
 	try {
-		console.log('Inicia insercion');
+		const id_codificado = req.params.id; 
+		const id = decodificar(id_codificado);
 
+		console.log('Llega luego de la decodificacion');
+
+		if (id==null || isNaN(id)) {
+			res.status(400).json({
+				message: 'Error en decodificacion del id'
+			})
+		}
+		const sql = 'SELECT URL_VIDEO FROM platillo_tipico WHERE ID_PLATILLO = ?'; 
+		const [result] = pool.query(sql, [id]); 
+
+		console.log('Logra hacer la query'); 
+
+		if (result.length===0) {
+			console.log('No se encontro el video'); 
+		} else {
+			const video = result[0].URL_VIDEO; 
+
+			res.setHeader('Content-Type', 'video/mp4');
+			res.setHeader('Accept-Ranges', 'bytes');
+
+			const video_stream = fs.createReadStream(video);
+
+			const rango = req.headers.range; 
+			if (rango) {
+				const partes = rango.replace(/bytes=/, '').split('-');
+				const inicio = parseInt(partes[0], 10);
+				const fin = partes[1]? parseInt(partes[1], 10): video.length-1; 
+				const longitud = fin-inicio +1; 
+
+				res.status(206);
+				res.setHeader('Content-Length', longitud); 
+				res.setHeader('Content-Range', `bytes ${inicio}-${fin}/${video.length}`); 
+				video_stream.pipe(res, {inicio, fin}); 
+			} else {
+				res.setHeader('Content-Length', video.length);
+				video_stream.pipe(res);
+			}
+		}
+	} catch (err) {
+		console.log(err);
+		res.status(500).json({
+			message: 'Error del servidor',
+			error: err
+		})
+	}
+});
+exports.insertar_platillo = asyncHandler(async (req, res) => {
+	try {
 		const nombre = req.body.nombre; 
 		const descripcion = req.body.descripcion; 
 		const imagen = req.files['imagen'][0].buffer; 
@@ -61,12 +126,8 @@ exports.insertarPlatillo = asyncHandler(async (req, res) => {
 
 		const query = 'INSERT INTO platillo_tipico(TITULO_PLATILLO,DESCRIPCION_PLATILLO,IMAGEN_PLATILLO,URL_VIDEO) VALUES(?,?,?,?)';
 
-		console.log('Exitos al manejar los atributos');
-
 		const [result] = await pool.query(query, [nombre, descripcion, imagen, video]); 
 		
-		console.log('Pudo hacer la query');
-
 		if (result.affectedRows >0 ) {
 			res.status(200).json({
 				message: 'Platillo registrado correctamente'
@@ -84,7 +145,7 @@ exports.insertarPlatillo = asyncHandler(async (req, res) => {
 		})
 	}
 });
-exports.modificarPlatillo = asyncHandler(async (req, res) => {
+exports.modificar_platillo = asyncHandler(async (req, res) => {
 	try {
 		let id = req.params.id; 
 		id = decodificar(id); 
@@ -119,7 +180,7 @@ exports.modificarPlatillo = asyncHandler(async (req, res) => {
 	}
 });
 
-exports.eliminarPlatillo = asyncHandler(async (req, res, next) => {
+exports.eliminar_platillo = asyncHandler(async (req, res, next) => {
 	try {
 		let id = req.params.id; 
 		id = decodificar(id);
