@@ -1,21 +1,21 @@
 const asyncHandler = require('express-async-handler'); 
 const crypto = require('crypto'); 
 const fs = require('fs');
+const streamifier = require('streamifier');
 
 const pool = require('../configuraciones/database'); 
 
 function codificar(valor) {
-	const hash = crypto.createHash('sha256'); 
-	hash.update(valor.toString());
-	return hash.digest('hex');
+	return valor.toString();
 }
 function decodificar(hash) {
 	try {
-		const valor = Buffer.from(hash, 'hex').toString('utf8'); 
-		return parseInt(valor, 10); 
+		const valor = parseFloat(hash);
+		console.log(valor);
+		return valor; 
 	} catch (err) {
 		console.log('Error en la decodificacion', err);
-		return null; 
+		return NaN; 
 	}
 }
 
@@ -76,22 +76,21 @@ exports.stream_video = asyncHandler (async (req, res) => {
 		if (id==null || isNaN(id)) {
 			res.status(400).json({
 				message: 'Error en decodificacion del id'
-			})
+			}); return;
 		}
 		const sql = 'SELECT URL_VIDEO FROM platillo_tipico WHERE ID_PLATILLO = ?'; 
-		const [result] = pool.query(sql, [id]); 
-
-		console.log('Logra hacer la query'); 
+		const [result] = await pool.query(sql, [id]); 
 
 		if (result.length===0) {
 			console.log('No se encontro el video'); 
+			res.status(400).json({message: 'video no encontrado'});
 		} else {
 			const video = result[0].URL_VIDEO; 
 
 			res.setHeader('Content-Type', 'video/mp4');
 			res.setHeader('Accept-Ranges', 'bytes');
 
-			const video_stream = fs.createReadStream(video);
+			const video_stream = streamifier.createReadStream(video);
 
 			const rango = req.headers.range; 
 			if (rango) {

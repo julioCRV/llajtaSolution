@@ -27,6 +27,7 @@
         // Extrae el ID codificado del platillo
         const id_codificado = data.respuesta.id; // Asegúrate de usar la propiedad correcta aquí
         console.log(data.respuesta);
+
         // Configura la información del platillo en la página
         const platilloInfo = document.getElementById('platillo-info');
         platilloInfo.innerHTML = `
@@ -34,15 +35,19 @@
           <p>Descripción: ${data.respuesta.descripcion}</p>
         `;
 
-        // Configura la fuente del reproductor de video
-        const videoPlayer = document.getElementById('video-player');
-        videoPlayer.src = `/stream/${id_codificado}`;
-
         // Configura la fuente de la imagen del platillo
         const imagenPlatillo = document.getElementById('imagen-platillo');
         imagenPlatillo.src = data.respuesta.imagen;
+
+        // Luego de que el primer fetch termine, realiza el segundo fetch
+        return fetch(`/stream/${id_codificado}`);
       })
-      .catch(error => console.error('Error al obtener el platillo:', error));
+      .then(response => {
+        // Configura la fuente del reproductor de video
+        const videoPlayer = document.getElementById('video-player');
+        videoPlayer.src = response.url;
+      })
+      .catch(error => console.error('Error al obtener el platillo o el video:', error));
   </script>
 </body>
 </html>
